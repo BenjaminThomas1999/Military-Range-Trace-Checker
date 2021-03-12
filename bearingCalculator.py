@@ -1,8 +1,8 @@
 import math
-def mils_to_rads(mils):
+def mils_to_rads(mils): #inputs an angle measured in miltary mils and returns angle in radians
     return (45*math.pi*mils)/144000
 
-def rads_to_mils(rads):
+def rads_to_mils(rads): #inputs an angle measured in radians and returns angle in military mils
     return (rads*1440)/(45*math.pi)
 
 def get_bearing(a, b):
@@ -10,7 +10,7 @@ def get_bearing(a, b):
     ay = int(a[4:])
     bx = int(b[0:4])
     by = int(b[4:])
-    #Imaginary point P
+    #Create an imaginary point to cconstruct a triangle from which an angle can be calcuated 
     px = ax
     py = ay + 1000
 
@@ -36,6 +36,34 @@ def get_distance(a, b):
     
     return round(distance/100, 2)
 
+def create_line(a, bearing, distance):#creates a line from point a
+    ax = int(a[0:4])
+    ay = int(a[4:])
+    
+    #pythagoras theorum
+    if bearing <= 1600:
+        deltax = math.sin(mils_to_rads(bearing))*distance
+        deltay = math.cos(mils_to_rads(bearing))*distance
+    elif bearing <= 3200:
+        deltax = math.cos(mils_to_rads(bearing-1600))*distance
+        deltay = -math.sin(mils_to_rads(bearing-1600))*distance
+    elif bearing <= 4800:
+        deltax = -math.cos(mils_to_rads(4800-bearing))*distance
+        deltay = -math.sin(mils_to_rads(4800-bearing))*distance
+    elif bearing <= 6400:
+        deltax = -math.sin(mils_to_rads(6400-bearing))*distance
+        deltay = math.cos(mils_to_rads(6400-bearing))*distance
+    else: 
+        return "invalid input"
+        
+    
+    bx = round(ax + deltax)
+    by = round(ay + deltay)
+        
+    return str(bx).zfill(4) + " " + str(by).zfill(4)
+    
+def input_grid(name):
+    return input("Enter 6 figure grid reference for point " + name + ": ").replace(" ", "")
 
 class color:
    PURPLE = '\033[1m\033[95m'
@@ -60,52 +88,33 @@ while True:
     program = input(greeterString).upper()
     print("\n\n")
     if program == "A":
-        a = input("Enter 8 figure grid for point a: ").replace(" ", "")        
-        b = input("Enter 8 figure grid for point b: ").replace(" ", "")
+        a = input_grid("a")        
+        b = input_grid("b")
         
         
         print("Bearing: " + get_bearing(a, b) + "mils")
         print("Distance: " + str(get_distance(a, b))  + "km")
         
     elif program == "B":
-        a = input("Enter 8 figure grid for point a: ").replace(" ", "")
-        ax = int(a[0:4])
-        ay = int(a[4:])
-        
-        bearing = float(input("Enter bearing (in mils): "))
-        distance = float(input("Enter distance (in KM): "))*100
-        
-        #pythagoras theorum
-        if bearing <= 1600:
-            deltax = math.sin(mils_to_rads(bearing))*distance
-            deltay = math.cos(mils_to_rads(bearing))*distance
-        elif bearing <= 3200:
-            deltax = math.cos(mils_to_rads(bearing-1600))*distance
-            deltay = -math.sin(mils_to_rads(bearing-1600))*distance
-        elif bearing <= 4800:
-            deltax = -math.cos(mils_to_rads(4800-bearing))*distance
-            deltay = -math.sin(mils_to_rads(4800-bearing))*distance
-        elif bearing <= 6400:
-            deltax = -math.sin(mils_to_rads(6400-bearing))*distance
-            deltay = math.cos(mils_to_rads(6400-bearing))*distance
-        else: 
-            print("invalid input")
-            break
-        
-        bx = round(ax + deltax)
-        by = round(ay + deltay)
-        
-        
-        
-        
-        print("Grid for point b: " + str(bx).zfill(4) + " " + str(by).zfill(4))
+                
+        print(create_line(input_grid("b"),
+        int(input("Enter bearing from point a (mils): ")),
+        int(input("Enter distance from point a (KM): "))))
     
     
     elif program == "C":
-        a = input("Enter 8 figure grid for the Flank Firing Gun: ").replace(" ", "")
-        b = input("Enter 8 figure grid for the Limit of Troops: ").replace(" ", "")
+        FFG = input_grid("Flank Firing Gun")
+        LoT = input_grid("Limit of Troops")
         leftOrRight = input("Leftmost or Rightmost limit of Troops? [L/r]: ").upper()
-
+        axis = get_bearing(FFG, LoT)
+        print("Axis: " + axis)
+        if leftOrRight == "L":
+            axis -= 200
+        elif leftOrRight == "R":
+            axis += 200
+        
+        print("Axis (adjusted for 200mils safety): " + axis)
+        
     else:
         print("Invalid input")
         
